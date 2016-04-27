@@ -40,14 +40,6 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(MainActivity.this,Registro.class));
     }
 
-
-
-
-
-
-
-
-
     public void validarOnClick(View view){
 
         AsyncHttpClient client = new AsyncHttpClient();

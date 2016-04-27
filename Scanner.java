@@ -38,7 +38,8 @@ public class Scanner extends AppCompatActivity {
     TextView contenidoTxt;
     TextView formatoTxt;
     ListView lista;
-    String codigoG=null;
+    int valorTemp=0;
+    TextView sumaT;
     ArrayList<String>full = new ArrayList<>();
 
     @Override
@@ -48,14 +49,12 @@ public class Scanner extends AppCompatActivity {
         tv_nombre = (TextView)findViewById(R.id.tv_nombre);
         Aplicacion app = (Aplicacion)getApplicationContext();
         tv_nombre.setText("Bienvenido: "+app.getUsuario());
-
         //Se Instancia el Campo de Texto para el nombre del formato de código de barra
         formatoTxt = (TextView)findViewById(R.id.formato);
         //Se Instancia el Campo de Texto para el contenido  del código de barra
         contenidoTxt = (TextView)findViewById(R.id.contenido);
-
         lista = (ListView)findViewById(R.id.lista);
-
+        sumaT =(TextView)findViewById(R.id.tvSuma);
 
     }
     public void Scanner (View view) {
@@ -80,12 +79,8 @@ public class Scanner extends AppCompatActivity {
                                 ActivityCompat.requestPermissions(Scanner.this, new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
                             }
                         }).show();
-
-
             } else {
-
                 ActivityCompat.requestPermissions((Activity) Scanner.this, new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
-
             }
 
         } else {
@@ -95,17 +90,12 @@ public class Scanner extends AppCompatActivity {
             integrator.addExtra("SCAN_HEIGHT", 800);
             integrator.addExtra("PROMPT_MESSAGE", "Busque un código para escanear");
             integrator.addExtra("RESULT_DISPLAY_DURATION_MS",0l);
-
             integrator.initiateScan();
-
         }
-
-
     }
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
         IntentResult resultadoScan = IntentIntegrator.parseActivityResult( requestCode, resultCode, intent);
-        String resultado=null;
         String scanContenido = "";
         String scanFormato="";
         String resultadoCod=null;
@@ -126,11 +116,6 @@ public class Scanner extends AppCompatActivity {
             contenidoTxt.setText("");
 
         }
-
-
-
-
-
     }
     public void consultar(String codigoG){
 
@@ -153,24 +138,19 @@ public class Scanner extends AppCompatActivity {
                         String cod =o.getJSONObject(0).getString("cod");
                         if(!TextUtils.isEmpty(cod)|| !cod.equals(null)|| !cod.equals(contenidoTxt.getText().toString())){
 
-                            Crouton.makeText(Scanner.this,"Producto encontrado try", Style.ALERT).show();
+                            Crouton.makeText(Scanner.this,"Producto encontrado!", Style.ALERT).show();
                             cargarLista(obtenerDatosJSON(new String (responseBody)));
 
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Crouton.makeText(Scanner.this,"Producto no encontrado consultar", Style.ALERT).show();
+                        Crouton.makeText(Scanner.this,"Producto no encontrado", Style.ALERT).show();
                     }
 
+                }else{
 
-
-                    }else{
-
-                    Crouton.makeText(Scanner.this,"Producto no encontrado consultar2", Style.ALERT).show();
+                    Crouton.makeText(Scanner.this,"Producto no encontrado", Style.ALERT).show();
                 }
-
-
-
             }
 
             @Override
@@ -193,7 +173,8 @@ public class Scanner extends AppCompatActivity {
                         jsonArray.getJSONObject(i).getString(("precio"));
                     listado.add(texto);
                 full.add(texto);
-
+                valorTemp=valorTemp+Integer.valueOf(jsonArray.getJSONObject(i).getString("precio"));
+                sumaT.setText(String.valueOf(valorTemp));
             }
 
         }catch(Exception e){
@@ -207,5 +188,7 @@ public class Scanner extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,datos);
         lista.setAdapter(adapter);
     }
+
+
 
 }
