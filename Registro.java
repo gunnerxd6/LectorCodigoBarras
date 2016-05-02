@@ -9,6 +9,7 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -53,8 +54,8 @@ public class Registro extends AppCompatActivity {
             Crouton.makeText(Registro.this, "Debe completar todos los campos!", Style.ALERT).show();
 
         }else{
-
-            registrarUsuario(user,pass,app,apm,rut,nombre);
+            //registrarUsuario(user,pass,app,apm,rut,nombre);
+            buscaRut(user,pass,app,apm,rut,nombre);
         }
 
 
@@ -125,4 +126,64 @@ public class Registro extends AppCompatActivity {
         return validacion;
     }
 
+public boolean buscaRut(final String usuario, final String password,final String app1, final String apm, final String rut, final String nombre){
+    final boolean esta=false;
+    int opcion=1;
+
+    final Aplicacion app = (Aplicacion)getApplicationContext();
+    AsyncHttpClient client = new AsyncHttpClient();
+    String url="http://victordbandroid.esy.es/sw/funciones.php?";
+    RequestParams params = new RequestParams();
+    params.put("opcion",opcion);
+    params.put("rut",rut);
+    params.put("user",usuario);
+    client.post(url, params, new AsyncHttpResponseHandler() {
+        String rut2;
+        @Override
+        public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+            boolean usuarioExiste;
+            boolean rutExiste;
+            boolean error=false;
+        if(statusCode==200){
+            try {
+                JSONArray jsonArray = new JSONArray(new String(responseBody));
+                String usuarioC;
+                String rutC;
+                for (int i = 0;i<jsonArray.length();i++){
+
+                    usuarioC=jsonArray.getJSONObject(i).getString("Login");
+                    rutC=jsonArray.getJSONObject(i).getString("rut");
+                    if(usuarioC.equals(usuario)){
+                        Crouton.makeText(Registro.this,"Usuario ya existe!",Style.ALERT).show();
+                        error=true;
+                    }
+                    if(rutC.equals(rut)){
+                        Crouton.makeText(Registro.this,"Rut ya existe!",Style.ALERT).show();
+                        error=true;
+                    }
+                }
+
+                if(error=false){
+                    registrarUsuario(usuario,password,app1,apm,rut,nombre);
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        }
+
+        @Override
+        public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+        }
+    });
+
+    System.out.print("Resultado guardado: "+app.getUsuario());
+    return esta;
+
+
+}
 }

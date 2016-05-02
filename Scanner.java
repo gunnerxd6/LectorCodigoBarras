@@ -2,17 +2,25 @@ package mysqltest.pruebalogin2;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Rect;
+import android.os.Parcelable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.github.snowdream.android.widget.SmartImageView;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.loopj.android.http.AsyncHttpClient;
@@ -37,9 +45,18 @@ public class Scanner extends AppCompatActivity {
     TextView tv_nombre;
     TextView contenidoTxt;
     TextView formatoTxt;
-    ListView lista;
+    //ListView lista;
     int valorTemp=0;
     TextView sumaT;
+
+    //Intento carga lista con imagenes de producto
+    ListView lista;
+
+    ArrayList descripcion = new ArrayList();
+    ArrayList precio = new ArrayList();
+    ArrayList imagen = new ArrayList();
+
+
     ArrayList<String>full = new ArrayList<>();
 
     @Override
@@ -86,8 +103,8 @@ public class Scanner extends AppCompatActivity {
         } else {
 
             IntentIntegrator integrator = new IntentIntegrator(this);
-            integrator.addExtra("SCAN_WIDTH", 800);
-            integrator.addExtra("SCAN_HEIGHT", 800);
+            integrator.addExtra("SCAN_WIDTH", 640);
+            integrator.addExtra("SCAN_HEIGHT", 480);
             integrator.addExtra("PROMPT_MESSAGE", "Busque un código para escanear");
             integrator.addExtra("RESULT_DISPLAY_DURATION_MS",0l);
             integrator.initiateScan();
@@ -117,7 +134,7 @@ public class Scanner extends AppCompatActivity {
 
         }
     }
-    public void consultar(String codigoG){
+    public void consultar(final String codigoG){
 
 
         AsyncHttpClient client = new AsyncHttpClient();
@@ -135,11 +152,12 @@ public class Scanner extends AppCompatActivity {
 
                     try {
                         JSONArray o = new JSONArray(new String(responseBody));
-                        String cod =o.getJSONObject(0).getString("cod");
-                        if(!TextUtils.isEmpty(cod)|| !cod.equals(null)|| !cod.equals(contenidoTxt.getText().toString())){
+                        String codi =o.getJSONObject(0).getString("cod");
+                        if(!TextUtils.isEmpty(codi)|| !codi.equals(null)|| !codi.equals(contenidoTxt.getText().toString())){
 
                             Crouton.makeText(Scanner.this,"Producto encontrado!", Style.ALERT).show();
-                            cargarLista(obtenerDatosJSON(new String (responseBody)));
+                            //cargarLista(obtenerDatosJSON(new String (responseBody)));
+                            listaImagenes(codigoG);
 
                         }
                     } catch (Exception e) {
@@ -161,7 +179,7 @@ public class Scanner extends AppCompatActivity {
 
     }
 
-    public ArrayList<String>obtenerDatosJSON(String arrayJson){
+/*    public ArrayList<String>obtenerDatosJSON(String arrayJson){
         ArrayList<String> listado = new ArrayList<String>();
         try{
             JSONArray jsonArray = new JSONArray(arrayJson);
@@ -182,13 +200,108 @@ public class Scanner extends AppCompatActivity {
         }
 
         return full;
-    }
+    } */
 
-    public void cargarLista (ArrayList<String> datos){
+   /* public void cargarLista (ArrayList<String> datos){
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,datos);
         lista.setAdapter(adapter);
+    } */
+
+    public void listaImagenes(String codigoG){
+        //codigo.clear();
+        //descripcion.clear();
+        //precio.clear();
+        //imagen.clear();
+
+    final ProgressDialog progressDialog = new ProgressDialog(Scanner.this);
+        progressDialog.setMessage("Cargando lista...");
+        progressDialog.show();
+        AsyncHttpClient client = new AsyncHttpClient();
+        String url="http://victordbandroid.esy.es/sw/consulta2.php";
+        RequestParams requestParams = new RequestParams();
+        requestParams.put("cod",codigoG);
+        client.post(url, requestParams, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+            if(statusCode==200){
+                progressDialog.dismiss();
+                try {
+                    JSONArray jsonArray = new JSONArray(new String (responseBody));
+                    for(int i =0; i<jsonArray.length();i++){
+                        descripcion.add(jsonArray.getJSONObject(i).getString("descripcion"));
+                        precio.add(jsonArray.getJSONObject(i).getString("precio"));
+                        imagen.add(jsonArray.getJSONObject(i).getString("imagen"));
+                    }
+                    lista.setAdapter(new ImagenAdapter(getApplicationContext()));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+            }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
+
+
     }
+    public class ImagenAdapter extends BaseAdapter{
+        Context ctx;
+        LayoutInflater layoutInflater;
+        SmartImageView smartImageView;
+        TextView tvdescripcion,tvprecio,tvSuma;
+        public ImagenAdapter(Context applicationContext) {
+            this.ctx=applicationContext;
+            layoutInflater=(LayoutInflater)ctx.getSystemService(LAYOUT_INFLATER_SERVICE);
+        }
 
+        @Override
+        public int getCount() {
+            return imagen.size();
+        }
 
+        @Override
+        public Object getItem(int position) {
+            return position;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+
+            ViewGroup viewGroup =(ViewGroup)layoutInflater.inflate(R.layout.activity_scanner_item,null);
+            smartImageView=(SmartImageView)viewGroup.findViewById(R.id.imagen1);
+            tvdescripcion=(TextView)viewGroup.findViewById(R.id.tvDescripcion);
+            tvprecio=(TextView)viewGroup.findViewById(R.id.tvPrecio);
+            tvSuma=(TextView)findViewById(R.id.tvSuma);
+            String url="http://victordbandroid.esy.es/sw/imagenes/"+imagen.get(position).toString();
+            Rect rect = new Rect(smartImageView.getLeft(),smartImageView.getTop(),smartImageView.getRight(),smartImageView.getBottom());
+
+            smartImageView.setImageUrl(url,rect);
+            tvdescripcion.setText("Producto: \n"+descripcion.get(position).toString());
+            tvprecio.setText("Precio: \n$"+precio.get(position).toString());
+            String precioS=sumar(precio);
+            tvSuma.setText("$"+precioS);
+
+            return viewGroup;
+        }
+    }
+     public String sumar(ArrayList precio){
+         String sumat;
+         int p=0;
+         for(int i =0;i<precio.size();i++){
+             p=p+Integer.valueOf(precio.get(i).toString());
+         }
+         sumat=String.valueOf(p);
+         return sumat;
+     }
 
 }
