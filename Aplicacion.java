@@ -8,6 +8,7 @@ import android.app.Application;
 public class Aplicacion extends Application {
     private String usuario;
     private int res;
+    String codigo;
     public String getUsuario() {
         return usuario;
     }
@@ -22,5 +23,13 @@ public class Aplicacion extends Application {
 
     public void setRes(int res) {
         this.res = res;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
     }
 }

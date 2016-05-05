@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
                         Aplicacion app = (Aplicacion)getApplicationContext();
                         app.setUsuario(usuario);
-                        startActivity(new Intent(MainActivity.this,Scanner.class));
+                        startActivity(new Intent(MainActivity.this,Navegador.class));
 
                     }else{
 

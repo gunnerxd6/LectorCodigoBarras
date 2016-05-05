@@ -1,5 +1,6 @@
 package mysqltest.pruebalogin2;
 
+
 import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -7,41 +8,41 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
-import android.os.Parcelable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.FrameLayout;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.github.snowdream.android.widget.SmartImageView;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
+import com.inthecheesefactory.thecheeselibrary.fragment.support.v4.app.StatedFragment;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.RequestHandle;
 import com.loopj.android.http.RequestParams;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 import cz.msebera.android.httpclient.Header;
-import cz.msebera.android.httpclient.ParseException;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
 
-public class Scanner extends AppCompatActivity {
+
+/**
+ * A simple {@link Fragment} subclass.
+ */
+public class CameraFragment extends StatedFragment {
     private static final int MI_PERMISO =1 ;
     TextView tv_nombre;
     TextView contenidoTxt;
@@ -49,6 +50,8 @@ public class Scanner extends AppCompatActivity {
     //ListView lista;
     int valorTemp=0;
     TextView sumaT;
+    Button btIniciar;
+    TextView tvSuma;
 
     //Intento carga lista con imagenes de producto
     ListView lista;
@@ -60,27 +63,44 @@ public class Scanner extends AppCompatActivity {
 
     ArrayList<String>full = new ArrayList<>();
 
+
+    public CameraFragment() {
+        // Required empty public constructor
+    }
+
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_scanner);
-        tv_nombre = (TextView)findViewById(R.id.tv_nombre);
-        Aplicacion app = (Aplicacion)getApplicationContext();
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View view= inflater.inflate(R.layout.fragment_camera, container, false);
+
+        tv_nombre = (TextView)view.findViewById(R.id.tv_nombre);
+        Aplicacion app = (Aplicacion)getActivity().getApplicationContext();
         tv_nombre.setText("Bienvenido: "+app.getUsuario());
         //Se Instancia el Campo de Texto para el nombre del formato de código de barra
-        formatoTxt = (TextView)findViewById(R.id.formato);
+        formatoTxt = (TextView)view.findViewById(R.id.formato);
         //Se Instancia el Campo de Texto para el contenido  del código de barra
-        contenidoTxt = (TextView)findViewById(R.id.contenido);
-        lista = (ListView)findViewById(R.id.lista);
-        sumaT =(TextView)findViewById(R.id.tvSuma);
-
-
+        contenidoTxt = (TextView)view.findViewById(R.id.contenido);
+        lista = (ListView)view.findViewById(R.id.lista);
+        sumaT =(TextView)view.findViewById(R.id.tvSuma);
+        btIniciar = (Button) view.findViewById(R.id.btScan);
+        tvSuma=(TextView)view.findViewById(R.id.tvSuma);
+        btIniciar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Scanner();
+            }
+        });
+        return view;
     }
-    public void Scanner (View view)  {
 
-        if (ActivityCompat.checkSelfPermission(Scanner.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) Scanner.this, Manifest.permission.CAMERA)) {
-                new SweetAlertDialog(Scanner.this, SweetAlertDialog.WARNING_TYPE)
+
+    public void Scanner ()  {
+
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) getActivity(), Manifest.permission.CAMERA)) {
+                new SweetAlertDialog(getActivity(), SweetAlertDialog.WARNING_TYPE)
                         .setTitleText("Atención")
                         .setContentText("Debe otorgar permisos para acceder a su a la camara de su dispositivo")
                         .setConfirmText("Solicitar permiso")
@@ -95,16 +115,16 @@ public class Scanner extends AppCompatActivity {
                             @Override
                             public void onClick(SweetAlertDialog sweetAlertDialog) {
                                 sweetAlertDialog.cancel();
-                                ActivityCompat.requestPermissions(Scanner.this, new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
+                                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
                             }
                         }).show();
             } else {
-                ActivityCompat.requestPermissions((Activity) Scanner.this, new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
+                ActivityCompat.requestPermissions((Activity) getActivity(), new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
             }
 
         } else {
 
-            IntentIntegrator integrator = new IntentIntegrator(this);
+            IntentIntegrator integrator = new IntentIntegrator(getActivity());
             integrator.addExtra("SCAN_WIDTH", 640);
             integrator.addExtra("SCAN_HEIGHT", 480);
             integrator.addExtra("PROMPT_MESSAGE", "Busque un código para escanear");
@@ -124,11 +144,11 @@ public class Scanner extends AppCompatActivity {
             scanContenido = resultadoScan.getContents();
             scanFormato = resultadoScan.getFormatName();
 
-                formatoTxt.setText("FORMATO: " + scanFormato);
-                contenidoTxt.setText("CONTENIDO: " + scanContenido);
+            formatoTxt.setText("FORMATO: " + scanFormato);
+            contenidoTxt.setText("CONTENIDO: " + scanContenido);
 
-                    resultadoCod=resultadoScan.getContents();
-                    consultar(resultadoCod);
+            resultadoCod=resultadoScan.getContents();
+            consultar(resultadoCod);
         }else{
 
             formatoTxt.setText("");
@@ -157,25 +177,25 @@ public class Scanner extends AppCompatActivity {
                         String codi =o.getJSONObject(0).getString("cod");
                         if(!TextUtils.isEmpty(codi)|| !codi.equals(null)|| !codi.equals(contenidoTxt.getText().toString())){
 
-                            Crouton.makeText(Scanner.this,"Producto encontrado!", Style.ALERT).show();
+                            Crouton.makeText(getActivity(),"Producto encontrado!", Style.ALERT,(ViewGroup) getView()).show();
                             //cargarLista(obtenerDatosJSON(new String (responseBody)));
                             listaImagenes(codigoG);
 
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Crouton.makeText(Scanner.this,"Producto no encontrado", Style.ALERT).show();
+                        Crouton.makeText(getActivity(),"Producto no encontrado", Style.ALERT,(ViewGroup) getView()).show();
                     }
 
                 }else{
 
-                    Crouton.makeText(Scanner.this,"Producto no encontrado", Style.ALERT).show();
+                    Crouton.makeText(getActivity(),"Producto no encontrado", Style.ALERT,(ViewGroup) getView()).show();
                 }
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Crouton.makeText(Scanner.this, "Producto no encontrado", Style.ALERT).show();
+                Crouton.makeText(getActivity(), "Producto no encontrado", Style.ALERT).show();
             }
         });
 
@@ -215,7 +235,7 @@ public class Scanner extends AppCompatActivity {
         //precio.clear();
         //imagen.clear();
 
-    final ProgressDialog progressDialog = new ProgressDialog(Scanner.this);
+        final ProgressDialog progressDialog = new ProgressDialog(getActivity());
         progressDialog.setMessage("Cargando lista...");
         progressDialog.show();
         AsyncHttpClient client = new AsyncHttpClient();
@@ -225,22 +245,22 @@ public class Scanner extends AppCompatActivity {
         client.post(url, requestParams, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-            if(statusCode==200){
-                progressDialog.dismiss();
-                try {
-                    JSONArray jsonArray = new JSONArray(new String (responseBody));
-                    for(int i =0; i<jsonArray.length();i++){
-                        descripcion.add(jsonArray.getJSONObject(i).getString("descripcion"));
-                        precio.add(jsonArray.getJSONObject(i).getString("precio"));
-                        imagen.add(jsonArray.getJSONObject(i).getString("imagen"));
+                if(statusCode==200){
+                    progressDialog.dismiss();
+                    try {
+                        JSONArray jsonArray = new JSONArray(new String (responseBody));
+                        for(int i =0; i<jsonArray.length();i++){
+                            descripcion.add(jsonArray.getJSONObject(i).getString("descripcion"));
+                            precio.add(jsonArray.getJSONObject(i).getString("precio"));
+                            imagen.add(jsonArray.getJSONObject(i).getString("imagen"));
+                        }
+                        lista.setAdapter(new ImagenAdapter(getActivity().getApplicationContext()));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                    lista.setAdapter(new ImagenAdapter(getApplicationContext()));
-                } catch (JSONException e) {
-                    e.printStackTrace();
+
+
                 }
-
-
-            }
             }
 
             @Override
@@ -251,14 +271,14 @@ public class Scanner extends AppCompatActivity {
 
 
     }
-    public class ImagenAdapter extends BaseAdapter{
+    public class ImagenAdapter extends BaseAdapter {
         Context ctx;
         LayoutInflater layoutInflater;
         SmartImageView smartImageView;
-        TextView tvdescripcion,tvprecio,tvSuma;
+        TextView tvdescripcion,tvprecio;
         public ImagenAdapter(Context applicationContext) {
             this.ctx=applicationContext;
-            layoutInflater=(LayoutInflater)ctx.getSystemService(LAYOUT_INFLATER_SERVICE);
+            layoutInflater=(LayoutInflater)ctx.getSystemService(getActivity().LAYOUT_INFLATER_SERVICE);
         }
 
         @Override
@@ -283,7 +303,6 @@ public class Scanner extends AppCompatActivity {
             smartImageView=(SmartImageView)viewGroup.findViewById(R.id.imagen1);
             tvdescripcion=(TextView)viewGroup.findViewById(R.id.tvDescripcion);
             tvprecio=(TextView)viewGroup.findViewById(R.id.tvPrecio);
-            tvSuma=(TextView)findViewById(R.id.tvSuma);
             String url="http://victordbandroid.esy.es/sw/imagenes/"+imagen.get(position).toString();
             Rect rect = new Rect(smartImageView.getLeft(),smartImageView.getTop(),smartImageView.getRight(),smartImageView.getBottom());
 
@@ -296,14 +315,15 @@ public class Scanner extends AppCompatActivity {
             return viewGroup;
         }
     }
-     public String sumar(ArrayList precio){
-         String sumat;
-         int p=0;
-         for(int i =0;i<precio.size();i++){
-             p=p+Integer.valueOf(precio.get(i).toString());
-         }
-         sumat=String.valueOf(p);
-         return sumat;
-     }
+    public String sumar(ArrayList precio){
+        String sumat;
+        int p=0;
+        for(int i =0;i<precio.size();i++){
+            p=p+Integer.valueOf(precio.get(i).toString());
+        }
+        sumat=String.valueOf(p);
+        return sumat;
+    }
+
 
 }
