@@ -7,7 +7,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -16,13 +15,12 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.github.snowdream.android.widget.SmartImageView;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.inthecheesefactory.thecheeselibrary.fragment.support.v4.app.StatedFragment;
@@ -44,15 +42,16 @@ import de.keyboardsurfer.android.widget.crouton.Style;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class CameraFragment extends StatedFragment {
+public class LectorFragment extends StatedFragment {
     private static final int MI_PERMISO =1 ;
     TextView tv_nombre;
     TextView contenidoTxt;
     TextView formatoTxt;
     //ListView lista;
-
+    TextView sumaT;
     Button btIniciar;
-
+    TextView tvSuma;
+    RelativeLayout relativeLayoutl;
 
     //Intento carga lista con imagenes de producto
     ListView lista;
@@ -64,10 +63,13 @@ public class CameraFragment extends StatedFragment {
     ArrayList descripcion = new ArrayList();
     ArrayList precio = new ArrayList();
     ArrayList imagen = new ArrayList();
+    ArrayList des = new ArrayList();
 
 
 
-    public CameraFragment() {
+
+
+    public LectorFragment() {
         // Required empty public constructor
     }
 
@@ -76,7 +78,9 @@ public class CameraFragment extends StatedFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view= inflater.inflate(R.layout.fragment_camera, container, false);
+        View view= inflater.inflate(R.layout.fragment_lector, container, false);
+
+        relativeLayoutl = (RelativeLayout) view.findViewById(R.id.lPrincipal);
 
         tv_nombre = (TextView)view.findViewById(R.id.tv_nombre);
         Aplicacion app = (Aplicacion)getActivity().getApplicationContext();
@@ -86,9 +90,9 @@ public class CameraFragment extends StatedFragment {
         //Se Instancia el Campo de Texto para el contenido  del código de barra
         contenidoTxt = (TextView)view.findViewById(R.id.contenido);
         lista = (ListView)view.findViewById(R.id.lista);
-
+        sumaT =(TextView)view.findViewById(R.id.tvSuma);
         btIniciar = (Button) view.findViewById(R.id.btScan);
-
+        tvSuma=(TextView)view.findViewById(R.id.tvSuma);
         etManual=(EditText)view.findViewById(R.id.etManual);
         btManual= (Button) view.findViewById(R.id.btManual);
         btIniciar.setOnClickListener(new View.OnClickListener() {
@@ -104,6 +108,7 @@ public class CameraFragment extends StatedFragment {
                 manual();
             }
         });
+
         return view;
     }
     public void manual(){
@@ -117,6 +122,8 @@ public class CameraFragment extends StatedFragment {
             builder.setPositiveButton("Aceptar",null);
             builder.show();
         }else{
+            listaImagenes(etManual.getText().toString());
+            crearDialogo(etManual.getText().toString());
 
         }
 
@@ -125,7 +132,7 @@ public class CameraFragment extends StatedFragment {
     public void Scanner ()  {
 
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) getActivity(), Manifest.permission.CAMERA)) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.CAMERA)) {
                 new SweetAlertDialog(getActivity(), SweetAlertDialog.WARNING_TYPE)
                         .setTitleText("Atención")
                         .setContentText("Debe otorgar permisos para acceder a su a la camara de su dispositivo")
@@ -145,7 +152,7 @@ public class CameraFragment extends StatedFragment {
                             }
                         }).show();
             } else {
-                ActivityCompat.requestPermissions((Activity) getActivity(), new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.CAMERA}, MI_PERMISO);
             }
 
         } else {
@@ -165,20 +172,14 @@ public class CameraFragment extends StatedFragment {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
         IntentResult resultadoScan = IntentIntegrator.parseActivityResult( requestCode, resultCode, intent);
-        String scanContenido = "";
-        String scanFormato="";
-        String resultadoCod=null;
+
+        String resultadoCod;
         if (resultadoScan != null) {
             System.out.println("**** Tenemos un resultado !");
 
-            scanContenido = resultadoScan.getContents();
-            scanFormato = resultadoScan.getFormatName();
-
-            formatoTxt.setText("FORMATO: " + scanFormato);
-            contenidoTxt.setText("CONTENIDO: " + scanContenido);
-
             resultadoCod=resultadoScan.getContents();
             consultar(resultadoCod);
+
         }else{
 
             formatoTxt.setText("");
@@ -186,47 +187,36 @@ public class CameraFragment extends StatedFragment {
 
         }
     }
-    public void consultar(final String codigoG){
-
-
+    public void consultar(String codigoG){
         AsyncHttpClient client = new AsyncHttpClient();
         String url ="http://srvpruebas2016.esy.es/android/scan.php";
         RequestParams parametros = new RequestParams();
         parametros.put("cod",codigoG);
-
         client.post(url, parametros, new AsyncHttpResponseHandler() {
-
-            ArrayList<String>lista;
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-
+                String codi;
                 if(statusCode==200){
-
                     try {
                         JSONArray o = new JSONArray(new String(responseBody));
-                        String codi =o.getJSONObject(0).getString("cod_producto");
+                        codi =o.getJSONObject(0).getString("codigo");
                         if(!TextUtils.isEmpty(codi)|| !codi.equals(null)|| !codi.equals(contenidoTxt.getText().toString())){
-
-                            Crouton.makeText(getActivity(),"Producto encontrado!", Style.ALERT,(ViewGroup) getView()).show();
-                            //cargarLista(obtenerDatosJSON(new String (responseBody)));
-                            listaImagenes(codi);
-
+                            System.out.println("Codigo en entrada"+codi.toString());
+                            Crouton.makeText(getActivity(),"Producto encontrado!", Style.CONFIRM,(ViewGroup) getView()).show();
+                            String codigoTemp= codi;
+                            crearDialogo(codigoTemp);
                         }else{
-
                             Crouton.makeText(getActivity(),"Producto no encontrado", Style.ALERT,(ViewGroup) getView()).show();
-
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
                         Crouton.makeText(getActivity(),"Producto no encontrado", Style.ALERT,(ViewGroup) getView()).show();
                     }
-
-                }else{
-
+                }
+                else{
                     Crouton.makeText(getActivity(),"Producto no encontrado", Style.ALERT,(ViewGroup) getView()).show();
                 }
             }
-
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Crouton.makeText(getActivity(), "Producto no encontrado", Style.ALERT).show();
@@ -241,7 +231,7 @@ public class CameraFragment extends StatedFragment {
         //imagen.clear();
 
         final ProgressDialog progressDialog = new ProgressDialog(getActivity());
-        progressDialog.setMessage("Cargando lista...");
+        progressDialog.setMessage("Cargando resultado...");
         progressDialog.show();
         AsyncHttpClient client = new AsyncHttpClient();
         String url="http://srvpruebas2016.esy.es/android/scan.php";
@@ -254,12 +244,12 @@ public class CameraFragment extends StatedFragment {
                     progressDialog.dismiss();
                     try {
                         JSONArray jsonArray = new JSONArray(new String (responseBody));
-                        for(int i =0; i<jsonArray.length();i++){
-                            descripcion.add(jsonArray.getJSONObject(i).getString("nombre"));
-                            precio.add(jsonArray.getJSONObject(i).getString("precio"));
-                            imagen.add(jsonArray.getJSONObject(i).getString("imagen"));
-                        }
-                        lista.setAdapter(new ImagenAdapter(getActivity().getApplicationContext()));
+                                for (int i = 0; i < jsonArray.length(); i++) {
+                                    descripcion.add(jsonArray.getJSONObject(i).getString("nombre"));
+                                    precio.add(jsonArray.getJSONObject(i).getString("precio"));
+                                    imagen.add(jsonArray.getJSONObject(i).getString("imagen"));
+                                }
+
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -276,48 +266,63 @@ public class CameraFragment extends StatedFragment {
 
 
     }
-    public class ImagenAdapter extends BaseAdapter {
-        Context ctx;
-        LayoutInflater layoutInflater;
-        SmartImageView smartImageView;
-        TextView tvdescripcion,tvprecio;
-        public ImagenAdapter(Context applicationContext) {
-            this.ctx=applicationContext;
-            layoutInflater=(LayoutInflater)ctx.getSystemService(getActivity().LAYOUT_INFLATER_SERVICE);
-        }
-
-        @Override
-        public int getCount() {
-            return imagen.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return position;
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            ViewGroup viewGroup =(ViewGroup)layoutInflater.inflate(R.layout.activity_scanner_item,null);
-            smartImageView=(SmartImageView)viewGroup.findViewById(R.id.imagen1);
-            tvdescripcion=(TextView)viewGroup.findViewById(R.id.tvDescripcion);
-            tvprecio=(TextView)viewGroup.findViewById(R.id.tvPrecio);
-            String url="http://srvpruebas2016.esy.es/imagenes/"+imagen.get(position).toString();
-            Rect rect = new Rect(smartImageView.getLeft(),smartImageView.getTop(),smartImageView.getRight(),smartImageView.getBottom());
-
-            smartImageView.setImageUrl(url,rect);
-            tvdescripcion.setText("Producto: \n"+descripcion.get(position).toString());
-            tvprecio.setText("Precio: \n$"+precio.get(position).toString());
 
 
-            return viewGroup;
-        }
+
+    public void crearDialogo(String codigoG){
+        final Intent i = new Intent(getActivity(),Dialogo.class);
+
+
+
+       AsyncHttpClient client = new AsyncHttpClient();
+        String url="http://srvpruebas2016.esy.es/android/scan.php";
+        RequestParams requestParams = new RequestParams();
+        requestParams.put("cod",codigoG);
+        client.post(url,requestParams, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONArray jsonArray = new JSONArray(new String (responseBody));
+                    for(int i =0; i<jsonArray.length();i++){
+                        descripcion.add(jsonArray.getJSONObject(i).getString("nombre"));
+                        precio.add(jsonArray.getJSONObject(i).getString("precio"));
+                        imagen.add(jsonArray.getJSONObject(i).getString("ruta"));
+                        des.add(jsonArray.getJSONObject(i).getString("des"));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                catch (IndexOutOfBoundsException x){
+                    Crouton.makeText(getActivity(),"Producto no encontrado",Style.ALERT).show();
+                }
+
+                try {
+                    Bundle bundle = new Bundle();
+                    String urlImagen = "http://srvpruebas2016.esy.es/" + imagen.get(0);
+                    bundle.putString("urlImagen", urlImagen);
+                    bundle.putString("nombre", descripcion.get(0).toString());
+                    bundle.putInt("precio", Integer.valueOf(precio.get(0).toString()));
+                    bundle.putString("des", des.get(0).toString());
+
+
+                    i.putExtras(bundle);
+                    startActivity(i);
+                }catch (IndexOutOfBoundsException e){
+                    Crouton.makeText(getActivity(),"Producto no encontrado", Style.ALERT,(ViewGroup) getView()).show();
+                }
+
+                imagen.clear();
+                descripcion.clear();
+                precio.clear();
+                des.clear();
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+        });
     }
+
 
 }

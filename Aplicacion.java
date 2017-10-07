@@ -9,10 +9,22 @@ public class Aplicacion extends Application {
     private String usuario;
     private int res;
     String codigo;
+
+
+    private boolean filtro;
+
+
+    public String getCorreo() {
+        return correo;
+    }
+    public void setCorreo(String correo) {
+        this.correo = correo;
+    }
+
+    private String correo;
     public String getUsuario() {
         return usuario;
     }
-
     public void setUsuario(String usuario) {
         this.usuario = usuario;
     }
@@ -25,11 +37,4 @@ public class Aplicacion extends Application {
         this.res = res;
     }
 
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
-    }
 }

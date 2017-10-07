@@ -54,8 +54,8 @@ public class Registro extends AppCompatActivity {
             Crouton.makeText(Registro.this, "Debe completar todos los campos!", Style.ALERT).show();
 
         }else{
-            //registrarUsuario(user,pass,app,apm,rut,nombre);
-            buscaRut(user,pass,app,apm,rut,nombre);
+                //registrarUsuario(user,pass,app,apm,rut,nombre);
+                buscaRut(user, pass, app, apm, rut, nombre);
         }
 
 
@@ -76,7 +76,6 @@ public class Registro extends AppCompatActivity {
                             JSONObject o = new JSONObject(new String(responseBody));
                             boolean ingreso = o.getBoolean("resultado");
                             if (ingreso == true) {
-                                String resultado = new String(responseBody);
                                 Crouton.makeText(Registro.this, "Registro Ok!", Style.ALERT).show();
                             } else {
 
@@ -100,6 +99,9 @@ public class Registro extends AppCompatActivity {
             }
 
         }
+
+
+
 
     public static boolean validarRut(String rut) {
 
@@ -132,17 +134,15 @@ public boolean buscaRut(final String usuario, final String password,final String
 
     final Aplicacion app = (Aplicacion)getApplicationContext();
     AsyncHttpClient client = new AsyncHttpClient();
-    String url="http://victordbandroid.esy.es/sw/funciones.php?";
+    String url="http://victordbandroid.esy.es/sw/funciones.php";
     RequestParams params = new RequestParams();
     params.put("opcion",opcion);
     params.put("rut",rut);
     params.put("user",usuario);
     client.post(url, params, new AsyncHttpResponseHandler() {
-        String rut2;
         @Override
         public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-            boolean usuarioExiste;
-            boolean rutExiste;
+
             boolean error=false;
         if(statusCode==200){
             try {
@@ -163,7 +163,7 @@ public boolean buscaRut(final String usuario, final String password,final String
                     }
                 }
 
-                if(error=false){
+                if(error==false){
                     registrarUsuario(usuario,password,app1,apm,rut,nombre);
                 }
 
@@ -172,7 +172,6 @@ public boolean buscaRut(final String usuario, final String password,final String
             }
 
         }
-
         }
 
         @Override
@@ -182,7 +181,7 @@ public boolean buscaRut(final String usuario, final String password,final String
     });
 
     System.out.print("Resultado guardado: "+app.getUsuario());
-    return esta;
+    return  esta;
 
 
 }
